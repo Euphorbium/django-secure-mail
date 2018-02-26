@@ -216,7 +216,7 @@ class EncryptingSmtpEmailBackend(EncryptingEmailBackendMixin,
     pass
 
 
-class SigningEmailBackend(SigningEmailBackendMixin,
+class SigningSmtpEmailBackend(SigningEmailBackendMixin,
                           SmtpBackend):
     pass
 
