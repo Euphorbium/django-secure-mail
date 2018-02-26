@@ -22,6 +22,10 @@ class EncryptionFailedError(Exception):
     pass
 
 
+class SigningFailedError(Exception):
+    pass
+
+
 def addresses_for_key(gpg, key):
     """
     Takes a key and extracts the email addresses for it.

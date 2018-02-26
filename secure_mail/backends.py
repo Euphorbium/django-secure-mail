@@ -13,8 +13,8 @@ from django.utils import six
 from .handlers import (handle_failed_message_encryption,
                        handle_failed_alternative_encryption,
                        handle_failed_attachment_encryption)
-from .settings import USE_GNUPG
-from .utils import (EncryptionFailedError, encrypt_kwargs, get_gpg)
+from .settings import USE_GNUPG, SIGNING_KEY_FINGERPRINT
+from .utils import (EncryptionFailedError, SigningFailedError, encrypt_kwargs, get_gpg)
 
 
 from .models import Address
@@ -45,6 +45,14 @@ def encrypt(text, addr):
         raise EncryptionFailedError("Encrypting mail to %s failed: '%s'",
                                     addr, encryption_result.status)
     return smart_text(encryption_result)
+
+
+def sign(text):
+    signing_result = gpg.sign(text, default_key=SIGNING_KEY_FINGERPRINT, **encrypt_kwargs)
+    if not signing_result.status == 'signature created':
+        raise SigningFailedError("Signing mail failed: '%s'",
+                                    addr, signing_result.status)
+    return smart_text(signing_result)
 
 
 def encrypt_attachment(address, attachment, use_asc):
@@ -160,11 +168,31 @@ def encrypt_messages(email_messages):
     return unencrypted_messages + encrypted_messages
 
 
+def sign_messages(email_messages):
+    unsigned_messages = []
+    signed_messages = []
+    for msg in email_messages:
+        # Replace the message body with signed message body
+        try:
+            msg.body = sign(msg.body)
+        except EncryptionFailedError as e:
+            handle_failed_message_signing(e)
+    return email_messages
+
+
 class EncryptingEmailBackendMixin(object):
     def send_messages(self, email_messages):
         if USE_GNUPG:
             email_messages = encrypt_messages(email_messages)
         super(EncryptingEmailBackendMixin, self)\
+            .send_messages(email_messages)
+
+
+class SigningEmailBackendMixin(object):
+    def send_messages(self, email_messages):
+        if USE_GNUPG:
+            email_messages = sign_messages(email_messages)
+        super(SigningEmailBackendMixin, self)\
             .send_messages(email_messages)
 
 
@@ -185,4 +213,14 @@ class EncryptingFilebasedEmailBackend(EncryptingEmailBackendMixin,
 
 class EncryptingSmtpEmailBackend(EncryptingEmailBackendMixin,
                                  SmtpBackend):
+    pass
+
+
+class SigningEmailBackend(SigningEmailBackendMixin,
+                          SmtpBackend):
+    pass
+
+
+class SigningEmailConsoleBackend(SigningEmailBackendMixin,
+                                 ConsoleBackend):
     pass

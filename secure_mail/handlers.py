@@ -34,6 +34,13 @@ def default_handle_failed_encryption(exception):
     raise exception
 
 
+def default_handle_failed_signing(exception):
+    """
+    Handle failures when trying to sign messages
+    """
+    raise exception
+
+
 def default_handle_failed_alternative_encryption(exception):
     """
     Handle failures when trying to encrypt alternative content for messages
@@ -97,6 +104,7 @@ exception_handlers = {
     'message': 'handle_failed_message_encryption',
     'alternative': 'handle_failed_alternative_encryption',
     'attachment': 'handle_failed_attachment_encryption',
+    'signing': 'handle_failed_message_signing'
 }
 
 for key, value in exception_handlers.items():
