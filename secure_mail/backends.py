@@ -12,7 +12,8 @@ from django.utils import six
 
 from .handlers import (handle_failed_message_encryption,
                        handle_failed_alternative_encryption,
-                       handle_failed_attachment_encryption)
+                       handle_failed_attachment_encryption,
+                       handle_failed_message_signing)
 from .settings import USE_GNUPG, SIGNING_KEY_FINGERPRINT
 from .utils import (EncryptionFailedError, SigningFailedError, encrypt_kwargs, get_gpg)
 
@@ -173,10 +174,12 @@ def sign_messages(email_messages):
     signed_messages = []
     for msg in email_messages:
         # Replace the message body with signed message body
-        try:
-            msg.body = sign(msg.body)
-        except EncryptionFailedError as e:
-            handle_failed_message_signing(e)
+        msg.body = sign(msg.body)
+        #handle errors later
+        # try:
+        #     msg.body = sign(msg.body)
+        # except EncryptionFailedError as e:
+        #     handle_failed_message_signing(e)
     return email_messages
 
 
